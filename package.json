@@ -1,0 +1,31 @@
+{
+  "name": "fmc-proxy",
+  "version": "1.0.0",
+  "description": "Fmc Proxy - curated & verified free proxy list (http / https / socks5) with auto refresh",
+  "type": "module",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "refresh": "node src/cli-refresh.js",
+    "typecheck": "node --check src/server.js && node --check src/service.js && node --check src/checker.js && node --check src/fetcher.js && node --check src/store.js && node --check src/config.js && node --check src/parser.js && node --check src/cli-refresh.js && node --check public/app.js"
+  },
+  "keywords": [
+    "proxy",
+    "free-proxy",
+    "socks5",
+    "http-proxy",
+    "proxy-list"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.7.9",
+    "express": "^4.21.2",
+    "http-proxy-agent": "^7.0.2",
+    "https-proxy-agent": "^7.0.6",
+    "socks-proxy-agent": "^8.0.5"
+  }
+}

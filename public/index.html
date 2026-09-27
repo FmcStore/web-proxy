@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fmc Proxy — Free Proxy Aktif &amp; Anonym</title>
+  <meta name="description" content="Daftar free proxy HTTP, HTTPS, dan SOCKS5 yang sudah diverifikasi aktif dan menyembunyikan IP asli." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="brand">
+        <span class="logo">🛡️</span>
+        <div>
+          <h1>Fmc <span>Proxy</span></h1>
+          <p class="tagline">Free proxy yang sudah dicek — aktif &amp; menyembunyikan IP asli kamu.</p>
+        </div>
+      </div>
+      <div class="hero-actions">
+        <button id="refreshBtn" class="btn primary">Cek Ulang Sekarang</button>
+        <span id="statusPill" class="pill">memuat…</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="stats" id="stats">
+      <div class="stat"><span class="stat-label">Total Aktif</span><span class="stat-value" id="s-total">–</span></div>
+      <div class="stat"><span class="stat-label">HTTP</span><span class="stat-value" id="s-http">–</span></div>
+      <div class="stat"><span class="stat-label">HTTPS</span><span class="stat-value" id="s-https">–</span></div>
+      <div class="stat"><span class="stat-label">SOCKS5</span><span class="stat-value" id="s-socks5">–</span></div>
+      <div class="stat"><span class="stat-label">Elite</span><span class="stat-value" id="s-elite">–</span></div>
+      <div class="stat"><span class="stat-label">Rata² Ping</span><span class="stat-value" id="s-latency">–</span></div>
+      <div class="stat wide">
+        <span class="stat-label">Pengecekan terakhir</span>
+        <span class="stat-value small" id="s-last">–</span>
+        <span class="stat-sub">Cek otomatis berikutnya: <b id="s-next">–</b></span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="toolbar">
+        <div class="tabs" id="typeTabs">
+          <button class="tab active" data-type="">Semua</button>
+          <button class="tab" data-type="http">HTTP</button>
+          <button class="tab" data-type="https">HTTPS</button>
+          <button class="tab" data-type="socks5">SOCKS5</button>
+          <button class="tab" data-type="socks4">SOCKS4</button>
+        </div>
+        <div class="controls">
+          <select id="anonymity">
+            <option value="">Semua anonimitas</option>
+            <option value="elite">Elite (tanpa header bocor)</option>
+            <option value="anonymous">Anonymous</option>
+          </select>
+          <select id="sort">
+            <option value="latency">Tercepat</option>
+            <option value="recent">Terbaru dicek</option>
+            <option value="random">Acak</option>
+          </select>
+          <input id="search" type="search" placeholder="Cari IP…" autocomplete="off" />
+          <select id="limit">
+            <option value="50">50</option>
+            <option value="100" selected>100</option>
+            <option value="250">250</option>
+            <option value="500">500</option>
+            <option value="2000">2000</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="resultbar">
+        <span id="resultInfo">Memuat data…</span>
+        <div class="resultbar-actions">
+          <button class="btn ghost" id="copyBtn">Salin daftar</button>
+          <a class="btn ghost" id="downloadBtn" href="/api/proxies?format=text" download="fmc-proxy.txt">Unduh .txt</a>
+        </div>
+      </div>
+
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Proxy</th>
+              <th>Tipe</th>
+              <th>Anonimitas</th>
+              <th>Ping</th>
+              <th>Umur Cek</th>
+              <th>Sumber</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr><td colspan="8" class="empty">Memuat…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel docs" id="api">
+      <div class="docs-head">
+        <h2>API Documentation</h2>
+        <p>
+          Base URL <code id="baseUrl">/</code> — semua endpoint mengembalikan JSON,
+          kecuali <code>format=text</code>. CORS aktif, jadi aman dipanggil dari web/app lain.
+          Rate limit 120 request/menit per IP.
+        </p>
+      </div>
+
+      <div class="tryit">
+        <h3 class="docs-h3">🚀 Coba Langsung</h3>
+        <div class="tryit-row">
+          <select id="tryEndpoint">
+            <option value="/api/proxies">GET /api/proxies</option>
+            <option value="/api/proxies/random">GET /api/proxies/random</option>
+            <option value="/api/stats">GET /api/stats</option>
+            <option value="/api/sources">GET /api/sources</option>
+            <option value="/api/health">GET /api/health</option>
+          </select>
+          <input id="tryParams" type="text" value="type=http&amp;limit=5" placeholder="type=http&amp;limit=5" />
+          <button class="btn primary" id="tryBtn">Kirim</button>
+          <a class="btn ghost" id="tryNewTab" href="/api/proxies" target="_blank" rel="noreferrer">Buka tab baru</a>
+        </div>
+        <div class="tryit-meta" id="tryMeta">Pilih endpoint, isi parameter, lalu klik “Kirim”.</div>
+        <pre class="code" id="tryOutput">// respons muncul di sini</pre>
+        <div class="tryit-actions">
+          <button class="btn ghost small" id="tryCopyCurl">Salin sebagai cURL</button>
+          <a class="btn ghost small" href="/api" target="_blank" rel="noreferrer">JSON indeks /api</a>
+        </div>
+      </div>
+
+      <h3 class="docs-h3">Endpoint</h3>
+      <div class="tablewrap docs-tablewrap">
+        <table class="docs-table">
+          <thead>
+            <tr><th>Method</th><th>Path</th><th>Keterangan</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="method get">GET</span></td><td class="mono">/api/proxies</td><td>Daftar proxy aktif (JSON)</td></tr>
+            <tr><td><span class="method get">GET</span></td><td class="mono">/api/proxies/random</td><td>Satu proxy acak sesuai filter</td></tr>
+            <tr><td><span class="method get">GET</span></td><td class="mono">/api/stats</td><td>Statistik, progres scan, jadwal refresh berikutnya</td></tr>
+            <tr><td><span class="method get">GET</span></td><td class="mono">/api/sources</td><td>Daftar sumber proxy + hasil fetch terakhir</td></tr>
+            <tr><td><span class="method get">GET</span></td><td class="mono">/api/health</td><td>Health check</td></tr>
+            <tr><td><span class="method get">GET</span></td><td class="mono">/api</td><td>Ringkasan semua endpoint</td></tr>
+            <tr><td><span class="method post">POST</span></td><td class="mono">/api/refresh</td><td>Paksa cek ulang sekarang (<code>409</code> kalau sedang berjalan)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="docs-h3">Parameter <code>/api/proxies</code></h3>
+      <div class="tablewrap docs-tablewrap">
+        <table class="docs-table">
+          <thead>
+            <tr><th>Parameter</th><th>Nilai</th><th>Default</th><th>Keterangan</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono">type</td><td class="mono">http | https | socks5 | socks4</td><td>semua</td><td>Filter tipe proxy</td></tr>
+            <tr><td class="mono">anonymity</td><td class="mono">elite | anonymous</td><td>semua</td><td>Tingkat anonimitas</td></tr>
+            <tr><td class="mono">search</td><td class="mono">teks</td><td>–</td><td>Cocokkan sebagian IP</td></tr>
+            <tr><td class="mono">sort</td><td class="mono">latency | recent | random</td><td class="mono">latency</td><td>Urutan hasil</td></tr>
+            <tr><td class="mono">limit</td><td class="mono">angka</td><td class="mono">500</td><td>Jumlah maksimum hasil</td></tr>
+            <tr><td class="mono">format</td><td class="mono">json | text | uri</td><td class="mono">json</td><td><code>text</code> = daftar <code>ip:port</code></td></tr>
+            <tr><td class="mono">scheme</td><td class="mono">1</td><td>off</td><td>Tambah <code>protocol://</code> pada format text</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="docs-h3">Contoh</h3>
+
+      <div class="codewrap">
+        <span class="code-label">cURL — ambil 50 proxy HTTP</span>
+        <button class="copy" data-copy-text="curl &quot;http://localhost:3000/api/proxies?type=http&amp;limit=50&quot;">Salin</button>
+        <pre class="code">curl "http://localhost:3000/api/proxies?type=http&amp;limit=50"</pre>
+      </div>
+
+      <div class="codewrap">
+        <span class="code-label">Daftar teks siap pakai (SOCKS5, tanpa skema)</span>
+        <button class="copy" data-copy-text="curl &quot;http://localhost:3000/api/proxies?type=socks5&amp;format=text&quot;">Salin</button>
+        <pre class="code">curl "http://localhost:3000/api/proxies?type=socks5&amp;format=text"
+
+# hasil:
+209.50.255.91:1080
+23.95.233.175:1080</pre>
+      </div>
+
+      <div class="codewrap">
+        <span class="code-label">JavaScript (fetch)</span>
+        <button class="copy" data-copy-text="const res = await fetch('http://localhost:3000/api/proxies?type=https&amp;limit=20');&#10;const { data, meta } = await res.json();&#10;console.log(meta.total, data);">Salin</button>
+        <pre class="code">const res = await fetch('http://localhost:3000/api/proxies?type=https&amp;limit=20');
+const { data, meta } = await res.json();
+console.log(meta.total, data);</pre>
+      </div>
+
+      <div class="codewrap">
+        <span class="code-label">Python (requests)</span>
+        <button class="copy" data-copy-text="import requests&#10;&#10;r = requests.get('http://localhost:3000/api/proxies', params={'type': 'http', 'limit': 20})&#10;for p in r.json()['data']:&#10;    print(p['proxy'], p['anonymity'], p['latencyMs'])">Salin</button>
+        <pre class="code">import requests
+
+r = requests.get('http://localhost:3000/api/proxies', params={'type': 'http', 'limit': 20})
+for p in r.json()['data']:
+    print(p['proxy'], p['anonymity'], p['latencyMs'])</pre>
+      </div>
+
+      <h3 class="docs-h3">Respons Contoh</h3>
+      <pre class="code">{
+  "ok": true,
+  "meta": {
+    "total": 812,
+    "returned": 2,
+    "type": "http",
+    "lastRefresh": "2026-09-26T02:30:07.146Z",
+    "nextRefresh": "2026-09-26T03:00:07.147Z"
+  },
+  "data": [
+    {
+      "proxy": "172.234.38.154:3128",
+      "host": "172.234.38.154",
+      "port": 3128,
+      "protocol": "http",
+      "types": ["http", "https"],
+      "anonymity": "elite",
+      "latencyMs": 39,
+      "source": "proxyscrape-http",
+      "lastChecked": "2026-09-26T02:29:45.726Z"
+    }
+  ]
+}</pre>
+    </section>
+
+    <footer class="footer">
+      <p>Fmc Proxy — data diambil dari sumber publik, diverifikasi ulang setiap 10 menit. Gunakan dengan bijak.</p>
+    </footer>
+  </main>
+
+  <div id="toast" class="toast"></div>
+  <script src="/app.js"></script>
+</body>
+</html>

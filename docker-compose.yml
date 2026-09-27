@@ -1,0 +1,16 @@
+services:
+  fmc-proxy:
+    build: .
+    image: fmc-proxy:latest
+    container_name: fmc-proxy
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      # 10 menit
+      REFRESH_INTERVAL_MS: 600000
+      REFRESH_ON_START: "true"
+    volumes:
+      # simpan hasil pengecekan supaya tidak hilang saat container restart
+      - ./data:/app/data

@@ -1,0 +1,25 @@
+# Konfigurasi Railway (Config as Code)
+# Referensi: https://docs.railway.com/config-as-code/reference
+#
+# Catatan: Railway otomatis menyuntikkan variabel $PORT, dan server ini
+# sudah membacanya (lihat src/config.js), jadi tidak perlu diatur di sini.
+
+"$schema" = "https://railway.com/railway.schema.json"
+
+[build]
+# Bangun pakai Dockerfile yang ada di root proyek
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+# Hanya rebuild kalau file-file ini berubah
+watchPatterns = ["src/**", "public/**", "package.json", "package-lock.json", "Dockerfile"]
+
+[deploy]
+# Railway me-route trafik publik ke $PORT; server mendengarkan di situ
+startCommand = "node src/server.js"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 120
+
+# Restart otomatis kalau proses mati
+restartPolicyType = "ALWAYS"
+restartPolicyMaxRetries = 10
