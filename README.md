@@ -146,6 +146,82 @@ Data pengecekan (`data/proxies.json`) hidup di filesystem container, jadi hilang
 | `GET /api/sources` | Daftar sumber + hasil fetch terakhir |
 | `GET /api/health` | Health check |
 | `POST /api/refresh` | Paksa cek ulang sekarang |
+| `GET|POST /api/cors?url=…` | Bantu fetch lintas-origin (CORS) |
+
+### Bantu request lintas-origin: `/api/cors`
+
+Browser sering diblokir **CORS** saat menembak API pihak ketiga. Endpoint ini membalik
+peran: **server** yang mengambil URL tujuan (bebas dari aturan CORS browser), lalu
+mengembalikan hasilnya ke browser dengan header CORS permisif.
+
+**Cara pakai (3 langkah):**
+
+1. Siapkan URL lengkap API yang mau dipanggil, contoh `https://api.contoh.com/data.json`.
+2. Bungkus jadi `/api/cors?url=` + URL tadi. Dari browser **wajib** pakai
+   `encodeURIComponent()` supaya `?` dan `&` di URL tujuan tidak bentrok.
+3. Panggil seperti API biasa — hasilnya sudah punya header CORS permisif.
+
+**Parameter**
+
+| Parameter | Nilai | Default | Keterangan |
+| --- | --- | --- | --- |
+| `url` | `https://…` | – | **Wajib.** URL tujuan (http/https) |
+| `method` | `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, … | mengikuti method request | Method ke URL tujuan |
+| `headers` | `{"X-Key":"…"}` | diteruskan dari request | Header request (JSON objek) |
+| `body` | teks | body request | Body (alternatif kalau tidak kirim body langsung) |
+| `format` | `json` | passthrough | Bungkus hasil jadi `{status, contentType, data}` |
+
+**Contoh**
+
+```bash
+# 1) GET — ambil JSON dari API lain lewat server ini
+curl "http://localhost:3000/api/cors?url=https://ipinfo.io/json"
+
+# 2) POST — body & header diteruskan apa adanya
+curl "http://localhost:3000/api/cors?url=https://api.contoh.com/v1/item" \
+  -X POST -H 'content-type: application/json' -d '{"nama":"budi"}'
+
+# 3) hasil dibungkus JSON + header kustom
+curl "http://localhost:3000/api/cors?url=https://api.contoh.com/v1/item&format=json" \
+  -H 'X-Api-Key: rahasia'
+```
+
+```js
+// JavaScript — dari browser, aman dari blokir CORS
+const res = await fetch('/api/cors?url=' + encodeURIComponent('https://api.contoh.com/data.json'));
+const data = await res.json();
+console.log(data);
+
+// baca info request ke API tujuan
+console.log(res.headers.get('X-Upstream-Status'), res.headers.get('X-Elapsed-Ms'));
+```
+
+```python
+# Python (requests)
+import requests
+
+r = requests.get('http://localhost:3000/api/cors',
+                 params={'url': 'https://api.contoh.com/data.json'})
+print(r.json())
+```
+
+```php
+// PHP (cURL)
+$url = 'https://api.contoh.com/data.json';
+$ch = curl_init('http://localhost:3000/api/cors?url=' . urlencode($url));
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+echo curl_exec($ch);
+```
+
+Default `format` mengembalikan isi respons tujuan **apa adanya (passthrough)** — termasuk
+status code, `content-type`, binary, dan redirect. Kalau `format=json`, hasilnya dibungkus.
+Semua header di-`expose`, jadi browser bisa membaca `X-Upstream-Status`, `X-Upstream-Url`,
+dan `X-Elapsed-Ms`.
+
+> **Keamanan:** demi menghindari SSRF, target ke jaringan privat (localhost, `10.x`,
+> `192.168.x`, `169.254.x`, `172.16–31.x`, `*.local`) diblokir secara default. Set
+> `CORS_FETCH_ALLOW_PRIVATE=true` kalau memang perlu. Endpoint ini juga bisa dimatikan
+> lewat `CORS_FETCH=false`.
 
 ### Parameter query `/api/proxies`
 
@@ -210,7 +286,11 @@ Contoh respons JSON:
 | `JUDGE_TIMEOUT_MS` | `7000` | Timeout request lewat proxy |
 | `REJECT_TRANSPARENT` | `true` | Buang proxy yang membocorkan IP asli |
 | `DATA_FILE` | `data/proxies.json` | Lokasi file hasil |
-| `CORS` | `true` | Aktifkan CORS di API |
+| `CORS` | `true` | Aktifkan CORS permisif (semua origin/method/header) di API |
+| `CORS_FETCH` | `true` | Aktifkan endpoint bantu `/api/cors` |
+| `CORS_FETCH_TIMEOUT_MS` | `15000` | Timeout request di `/api/cors` |
+| `CORS_FETCH_MAX_BYTES` | `5242880` | Batas ukuran respons `(5 MB)` |
+| `CORS_FETCH_ALLOW_PRIVATE` | `false` | Izinkan `/api/cors` menembak alamat jaringan privat |
 
 ---
 

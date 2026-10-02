@@ -160,7 +160,7 @@ async function loadProxies() {
     state.items = json.data || [];
     renderTable(json.meta);
   } catch {
-    els.tbody.innerHTML = '<tr><td colspan="7" class="empty">Gagal memuat data proxy.</td></tr>';
+    els.tbody.innerHTML = '<tr><td colspan="8" class="empty">Gagal memuat data proxy.</td></tr>';
   }
 }
 
@@ -278,6 +278,7 @@ const TRY_PRESETS = {
   '/api/stats': '',
   '/api/sources': '',
   '/api/health': '',
+  '/api/cors': 'url=https://ipinfo.io/json',
 };
 
 function currentTryPath() {
@@ -347,6 +348,30 @@ document.addEventListener('click', (e) => {
 });
 
 runTry();
+
+// --- sorot bagian dokumentasi yang sedang dilihat -----------------------------
+(function initDocsToc() {
+  const links = Array.from(document.querySelectorAll('.docs-toc a'));
+  const targets = links
+    .map((a) => document.getElementById(a.getAttribute('href').slice(1)))
+    .filter(Boolean);
+  if (!links.length || !targets.length || typeof IntersectionObserver !== 'function') return;
+
+  const setActive = (id) => {
+    links.forEach((a) => a.classList.toggle('active', a.getAttribute('href') === `#${id}`));
+  };
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      const visible = entries.filter((e) => e.isIntersecting);
+      if (visible.length) setActive(visible[0].target.id);
+    },
+    { rootMargin: '-100px 0px -65% 0px', threshold: 0 },
+  );
+
+  targets.forEach((t) => observer.observe(t));
+  setActive(targets[0].id);
+})();
 
 // --- polling ----------------------------------------------------------------
 function poll() {

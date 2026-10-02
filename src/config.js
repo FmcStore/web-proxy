@@ -48,6 +48,15 @@ export const config = {
 
   // Aktifkan CORS untuk API (biar gampang dikonsumsi app lain)
   cors: bool(process.env.CORS, true),
+
+  // Endpoint bantu CORS: server yang mengambil URL tujuan (bebas dari blokir
+  // CORS browser) lalu mengembalikannya dengan header CORS permisif.
+  corsFetch: bool(process.env.CORS_FETCH, true),
+  corsFetchTimeoutMs: num(process.env.CORS_FETCH_TIMEOUT_MS, 15000),
+  corsFetchMaxBytes: num(process.env.CORS_FETCH_MAX_BYTES, 5 * 1024 * 1024),
+  // Izinkan endpoint bantu menembak alamat jaringan privat (localhost, LAN, dst).
+  // Default false supaya server tidak jadi celah SSRF ke jaringan internal.
+  corsFetchAllowPrivate: bool(process.env.CORS_FETCH_ALLOW_PRIVATE, false),
 };
 
 /**

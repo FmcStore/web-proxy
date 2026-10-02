@@ -5,42 +5,71 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fmc Proxy — Free Proxy Aktif &amp; Anonym</title>
   <meta name="description" content="Daftar free proxy HTTP, HTTPS, dan SOCKS5 yang sudah diverifikasi aktif dan menyembunyikan IP asli." />
+  <meta name="theme-color" content="#06080f" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
+  <div class="bg-fx" aria-hidden="true"></div>
+
   <header class="hero">
     <div class="hero-inner">
-      <div class="brand">
+      <a class="brand" href="#top">
         <span class="logo">🛡️</span>
-        <div>
-          <h1>Fmc <span>Proxy</span></h1>
-          <p class="tagline">Free proxy yang sudah dicek — aktif &amp; menyembunyikan IP asli kamu.</p>
-        </div>
-      </div>
+        <span class="brand-text">
+          <h1>Fmc <em>Proxy</em></h1>
+          <p class="tagline">Free proxy yang sudah dicek — aktif &amp; menyembunyikan IP asli.</p>
+        </span>
+      </a>
+
+      <nav class="hero-nav">
+        <a href="#proxies">Daftar Proxy</a>
+        <a href="#api">Dokumentasi API</a>
+      </nav>
+
       <div class="hero-actions">
-        <button id="refreshBtn" class="btn primary">Cek Ulang Sekarang</button>
+        <button id="refreshBtn" class="btn primary">
+          <span class="btn-ico">⟳</span> Cek Ulang Sekarang
+        </button>
         <span id="statusPill" class="pill">memuat…</span>
       </div>
     </div>
   </header>
 
-  <main class="container">
+  <main class="container" id="top">
     <section class="stats" id="stats">
-      <div class="stat"><span class="stat-label">Total Aktif</span><span class="stat-value" id="s-total">–</span></div>
-      <div class="stat"><span class="stat-label">HTTP</span><span class="stat-value" id="s-http">–</span></div>
-      <div class="stat"><span class="stat-label">HTTPS</span><span class="stat-value" id="s-https">–</span></div>
-      <div class="stat"><span class="stat-label">SOCKS5</span><span class="stat-value" id="s-socks5">–</span></div>
-      <div class="stat"><span class="stat-label">Elite</span><span class="stat-value" id="s-elite">–</span></div>
-      <div class="stat"><span class="stat-label">Rata² Ping</span><span class="stat-value" id="s-latency">–</span></div>
-      <div class="stat wide">
-        <span class="stat-label">Pengecekan terakhir</span>
+      <div class="stat" data-accent="indigo">
+        <div class="stat-top"><span class="stat-ico">🌐</span><span class="stat-label">Total Aktif</span></div>
+        <span class="stat-value" id="s-total">–</span>
+      </div>
+      <div class="stat" data-accent="blue">
+        <div class="stat-top"><span class="stat-ico">🔗</span><span class="stat-label">HTTP</span></div>
+        <span class="stat-value" id="s-http">–</span>
+      </div>
+      <div class="stat" data-accent="teal">
+        <div class="stat-top"><span class="stat-ico">🔒</span><span class="stat-label">HTTPS</span></div>
+        <span class="stat-value" id="s-https">–</span>
+      </div>
+      <div class="stat" data-accent="violet">
+        <div class="stat-top"><span class="stat-ico">🧦</span><span class="stat-label">SOCKS5</span></div>
+        <span class="stat-value" id="s-socks5">–</span>
+      </div>
+      <div class="stat" data-accent="green">
+        <div class="stat-top"><span class="stat-ico">🕶️</span><span class="stat-label">Elite</span></div>
+        <span class="stat-value" id="s-elite">–</span>
+      </div>
+      <div class="stat" data-accent="amber">
+        <div class="stat-top"><span class="stat-ico">⚡</span><span class="stat-label">Rata² Ping</span></div>
+        <span class="stat-value" id="s-latency">–</span>
+      </div>
+      <div class="stat wide" data-accent="indigo">
+        <div class="stat-top"><span class="stat-ico">🕐</span><span class="stat-label">Pengecekan terakhir</span></div>
         <span class="stat-value small" id="s-last">–</span>
-        <span class="stat-sub">Cek otomatis berikutnya: <b id="s-next">–</b></span>
+        <span class="stat-sub">Cek otomatis berikutnya dalam <b id="s-next">–</b></span>
       </div>
     </section>
 
-    <section class="panel">
+    <section class="panel" id="proxies">
       <div class="toolbar">
         <div class="tabs" id="typeTabs">
           <button class="tab active" data-type="">Semua</button>
@@ -50,37 +79,49 @@
           <button class="tab" data-type="socks4">SOCKS4</button>
         </div>
         <div class="controls">
-          <select id="anonymity">
-            <option value="">Semua anonimitas</option>
-            <option value="elite">Elite (tanpa header bocor)</option>
-            <option value="anonymous">Anonymous</option>
-          </select>
-          <select id="sort">
-            <option value="latency">Tercepat</option>
-            <option value="recent">Terbaru dicek</option>
-            <option value="random">Acak</option>
-          </select>
-          <input id="search" type="search" placeholder="Cari IP…" autocomplete="off" />
-          <select id="limit">
-            <option value="50">50</option>
-            <option value="100" selected>100</option>
-            <option value="250">250</option>
-            <option value="500">500</option>
-            <option value="2000">2000</option>
-          </select>
+          <label class="field">
+            <span class="sr-only">Anonimitas</span>
+            <select id="anonymity">
+              <option value="">Semua anonimitas</option>
+              <option value="elite">Elite (tanpa header bocor)</option>
+              <option value="anonymous">Anonymous</option>
+            </select>
+          </label>
+          <label class="field">
+            <span class="sr-only">Urutan</span>
+            <select id="sort">
+              <option value="latency">Tercepat</option>
+              <option value="recent">Terbaru dicek</option>
+              <option value="random">Acak</option>
+            </select>
+          </label>
+          <label class="field search-field">
+            <span class="sr-only">Cari IP</span>
+            <input id="search" type="search" placeholder="Cari IP…" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span class="sr-only">Jumlah</span>
+            <select id="limit">
+              <option value="50">50 baris</option>
+              <option value="100" selected>100 baris</option>
+              <option value="250">250 baris</option>
+              <option value="500">500 baris</option>
+              <option value="2000">2000 baris</option>
+            </select>
+          </label>
         </div>
       </div>
 
       <div class="resultbar">
         <span id="resultInfo">Memuat data…</span>
         <div class="resultbar-actions">
-          <button class="btn ghost" id="copyBtn">Salin daftar</button>
-          <a class="btn ghost" id="downloadBtn" href="/api/proxies?format=text" download="fmc-proxy.txt">Unduh .txt</a>
+          <button class="btn ghost small" id="copyBtn">Salin daftar</button>
+          <a class="btn ghost small" id="downloadBtn" href="/api/proxies?format=text" download="fmc-proxy.txt">Unduh .txt</a>
         </div>
       </div>
 
       <div class="tablewrap">
-        <table>
+        <table class="proxies-table">
           <thead>
             <tr>
               <th>#</th>
@@ -105,12 +146,21 @@
         <h2>API Documentation</h2>
         <p>
           Base URL <code id="baseUrl">/</code> — semua endpoint mengembalikan JSON,
-          kecuali <code>format=text</code>. CORS aktif, jadi aman dipanggil dari web/app lain.
-          Rate limit 120 request/menit per IP.
+          kecuali <code>format=text</code>. CORS permisif penuh (semua origin, method, dan header),
+          jadi aman dipanggil dari web/app mana pun. Butuh menembak API lain yang diblokir CORS?
+          Pakai <code>/api/cors</code>. Rate limit 120 request/menit per IP.
         </p>
+        <div class="docs-toc">
+          <a href="#api-try">🚀 Coba Langsung</a>
+          <a href="#api-endpoints">Endpoint</a>
+          <a href="#api-params">Parameter</a>
+          <a href="#api-examples">Contoh</a>
+          <a href="#api-cors">Bantu CORS</a>
+          <a href="#api-response">Respons</a>
+        </div>
       </div>
 
-      <div class="tryit">
+      <div class="docs-card tryit" id="api-try">
         <h3 class="docs-h3">🚀 Coba Langsung</h3>
         <div class="tryit-row">
           <select id="tryEndpoint">
@@ -119,6 +169,7 @@
             <option value="/api/stats">GET /api/stats</option>
             <option value="/api/sources">GET /api/sources</option>
             <option value="/api/health">GET /api/health</option>
+            <option value="/api/cors">GET /api/cors</option>
           </select>
           <input id="tryParams" type="text" value="type=http&amp;limit=5" placeholder="type=http&amp;limit=5" />
           <button class="btn primary" id="tryBtn">Kirim</button>
@@ -132,80 +183,168 @@
         </div>
       </div>
 
-      <h3 class="docs-h3">Endpoint</h3>
-      <div class="tablewrap docs-tablewrap">
-        <table class="docs-table">
-          <thead>
-            <tr><th>Method</th><th>Path</th><th>Keterangan</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><span class="method get">GET</span></td><td class="mono">/api/proxies</td><td>Daftar proxy aktif (JSON)</td></tr>
-            <tr><td><span class="method get">GET</span></td><td class="mono">/api/proxies/random</td><td>Satu proxy acak sesuai filter</td></tr>
-            <tr><td><span class="method get">GET</span></td><td class="mono">/api/stats</td><td>Statistik, progres scan, jadwal refresh berikutnya</td></tr>
-            <tr><td><span class="method get">GET</span></td><td class="mono">/api/sources</td><td>Daftar sumber proxy + hasil fetch terakhir</td></tr>
-            <tr><td><span class="method get">GET</span></td><td class="mono">/api/health</td><td>Health check</td></tr>
-            <tr><td><span class="method get">GET</span></td><td class="mono">/api</td><td>Ringkasan semua endpoint</td></tr>
-            <tr><td><span class="method post">POST</span></td><td class="mono">/api/refresh</td><td>Paksa cek ulang sekarang (<code>409</code> kalau sedang berjalan)</td></tr>
-          </tbody>
-        </table>
+      <div class="docs-card" id="api-endpoints">
+        <h3 class="docs-h3">Endpoint</h3>
+        <div class="tablewrap docs-tablewrap">
+          <table class="docs-table">
+            <thead>
+              <tr><th>Method</th><th>Path</th><th>Keterangan</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><span class="method get">GET</span></td><td class="mono">/api/proxies</td><td>Daftar proxy aktif (JSON)</td></tr>
+              <tr><td><span class="method get">GET</span></td><td class="mono">/api/proxies/random</td><td>Satu proxy acak sesuai filter</td></tr>
+              <tr><td><span class="method get">GET</span></td><td class="mono">/api/stats</td><td>Statistik, progres scan, jadwal refresh berikutnya</td></tr>
+              <tr><td><span class="method get">GET</span></td><td class="mono">/api/sources</td><td>Daftar sumber proxy + hasil fetch terakhir</td></tr>
+              <tr><td><span class="method get">GET</span></td><td class="mono">/api/health</td><td>Health check</td></tr>
+              <tr><td><span class="method get">GET</span></td><td class="mono">/api</td><td>Ringkasan semua endpoint</td></tr>
+              <tr><td><span class="method post">POST</span></td><td class="mono">/api/refresh</td><td>Paksa cek ulang sekarang (<code>409</code> kalau sedang berjalan)</td></tr>
+              <tr><td><span class="method get">GET</span><span class="method post">POST</span></td><td class="mono">/api/cors</td><td>Bantu fetch lintas-origin — server mengambil URL tujuan, bebas dari blokir CORS browser</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <h3 class="docs-h3">Parameter <code>/api/proxies</code></h3>
-      <div class="tablewrap docs-tablewrap">
-        <table class="docs-table">
-          <thead>
-            <tr><th>Parameter</th><th>Nilai</th><th>Default</th><th>Keterangan</th></tr>
-          </thead>
-          <tbody>
-            <tr><td class="mono">type</td><td class="mono">http | https | socks5 | socks4</td><td>semua</td><td>Filter tipe proxy</td></tr>
-            <tr><td class="mono">anonymity</td><td class="mono">elite | anonymous</td><td>semua</td><td>Tingkat anonimitas</td></tr>
-            <tr><td class="mono">search</td><td class="mono">teks</td><td>–</td><td>Cocokkan sebagian IP</td></tr>
-            <tr><td class="mono">sort</td><td class="mono">latency | recent | random</td><td class="mono">latency</td><td>Urutan hasil</td></tr>
-            <tr><td class="mono">limit</td><td class="mono">angka</td><td class="mono">500</td><td>Jumlah maksimum hasil</td></tr>
-            <tr><td class="mono">format</td><td class="mono">json | text | uri</td><td class="mono">json</td><td><code>text</code> = daftar <code>ip:port</code></td></tr>
-            <tr><td class="mono">scheme</td><td class="mono">1</td><td>off</td><td>Tambah <code>protocol://</code> pada format text</td></tr>
-          </tbody>
-        </table>
+      <div class="docs-card" id="api-params">
+        <h3 class="docs-h3">Parameter <code>/api/proxies</code></h3>
+        <div class="tablewrap docs-tablewrap">
+          <table class="docs-table">
+            <thead>
+              <tr><th>Parameter</th><th>Nilai</th><th>Default</th><th>Keterangan</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="mono">type</td><td class="mono">http | https | socks5 | socks4</td><td>semua</td><td>Filter tipe proxy</td></tr>
+              <tr><td class="mono">anonymity</td><td class="mono">elite | anonymous</td><td>semua</td><td>Tingkat anonimitas</td></tr>
+              <tr><td class="mono">search</td><td class="mono">teks</td><td>–</td><td>Cocokkan sebagian IP</td></tr>
+              <tr><td class="mono">sort</td><td class="mono">latency | recent | random</td><td class="mono">latency</td><td>Urutan hasil</td></tr>
+              <tr><td class="mono">limit</td><td class="mono">angka</td><td class="mono">500</td><td>Jumlah maksimum hasil</td></tr>
+              <tr><td class="mono">format</td><td class="mono">json | text | uri</td><td class="mono">json</td><td><code>text</code> = daftar <code>ip:port</code></td></tr>
+              <tr><td class="mono">scheme</td><td class="mono">1</td><td>off</td><td>Tambah <code>protocol://</code> pada format text</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <h3 class="docs-h3">Contoh</h3>
+      <div class="docs-card" id="api-examples">
+        <h3 class="docs-h3">Contoh</h3>
 
-      <div class="codewrap">
-        <span class="code-label">cURL — ambil 50 proxy HTTP</span>
-        <button class="copy" data-copy-text="curl &quot;http://localhost:3000/api/proxies?type=http&amp;limit=50&quot;">Salin</button>
-        <pre class="code">curl "http://localhost:3000/api/proxies?type=http&amp;limit=50"</pre>
-      </div>
+        <div class="codewrap">
+          <span class="code-label">cURL — ambil 50 proxy HTTP</span>
+          <button class="copy" data-copy-text="curl &quot;http://localhost:3000/api/proxies?type=http&amp;limit=50&quot;">Salin</button>
+          <pre class="code">curl "http://localhost:3000/api/proxies?type=http&amp;limit=50"</pre>
+        </div>
 
-      <div class="codewrap">
-        <span class="code-label">Daftar teks siap pakai (SOCKS5, tanpa skema)</span>
-        <button class="copy" data-copy-text="curl &quot;http://localhost:3000/api/proxies?type=socks5&amp;format=text&quot;">Salin</button>
-        <pre class="code">curl "http://localhost:3000/api/proxies?type=socks5&amp;format=text"
+        <div class="codewrap">
+          <span class="code-label">Daftar teks siap pakai (SOCKS5, tanpa skema)</span>
+          <button class="copy" data-copy-text="curl &quot;http://localhost:3000/api/proxies?type=socks5&amp;format=text&quot;">Salin</button>
+          <pre class="code">curl "http://localhost:3000/api/proxies?type=socks5&amp;format=text"
 
 # hasil:
 209.50.255.91:1080
 23.95.233.175:1080</pre>
-      </div>
+        </div>
 
-      <div class="codewrap">
-        <span class="code-label">JavaScript (fetch)</span>
-        <button class="copy" data-copy-text="const res = await fetch('http://localhost:3000/api/proxies?type=https&amp;limit=20');&#10;const { data, meta } = await res.json();&#10;console.log(meta.total, data);">Salin</button>
-        <pre class="code">const res = await fetch('http://localhost:3000/api/proxies?type=https&amp;limit=20');
+        <div class="codewrap">
+          <span class="code-label">JavaScript (fetch)</span>
+          <button class="copy" data-copy-text="const res = await fetch('http://localhost:3000/api/proxies?type=https&amp;limit=20');&#10;const { data, meta } = await res.json();&#10;console.log(meta.total, data);">Salin</button>
+          <pre class="code">const res = await fetch('http://localhost:3000/api/proxies?type=https&amp;limit=20');
 const { data, meta } = await res.json();
 console.log(meta.total, data);</pre>
-      </div>
+        </div>
 
-      <div class="codewrap">
-        <span class="code-label">Python (requests)</span>
-        <button class="copy" data-copy-text="import requests&#10;&#10;r = requests.get('http://localhost:3000/api/proxies', params={'type': 'http', 'limit': 20})&#10;for p in r.json()['data']:&#10;    print(p['proxy'], p['anonymity'], p['latencyMs'])">Salin</button>
-        <pre class="code">import requests
+        <div class="codewrap">
+          <span class="code-label">Python (requests)</span>
+          <button class="copy" data-copy-text="import requests&#10;&#10;r = requests.get('http://localhost:3000/api/proxies', params={'type': 'http', 'limit': 20})&#10;for p in r.json()['data']:&#10;    print(p['proxy'], p['anonymity'], p['latencyMs'])">Salin</button>
+          <pre class="code">import requests
 
 r = requests.get('http://localhost:3000/api/proxies', params={'type': 'http', 'limit': 20})
 for p in r.json()['data']:
     print(p['proxy'], p['anonymity'], p['latencyMs'])</pre>
+        </div>
       </div>
 
-      <h3 class="docs-h3">Respons Contoh</h3>
-      <pre class="code">{
+      <div class="docs-card" id="api-cors">
+        <h3 class="docs-h3">Bantu Request Lintas-Origin <code>/api/cors</code></h3>
+        <p class="docs-note">
+          Endpoint bantu untuk request yang diblokir CORS: browser menembak endpoint ini,
+          server yang mengambil URL tujuan (bebas dari aturan CORS browser), lalu hasilnya
+          dikirim balik dengan header CORS permisif. Default mengembalikan isi respons apa
+          adanya (passthrough); tambahkan <code>format=json</code> untuk bungkus JSON.
+        </p>
+        <div class="tablewrap docs-tablewrap">
+          <table class="docs-table">
+            <thead>
+              <tr><th>Parameter</th><th>Nilai</th><th>Default</th><th>Keterangan</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="mono">url</td><td class="mono">https://…</td><td>–</td><td><b>Wajib.</b> URL tujuan (http/https)</td></tr>
+              <tr><td class="mono">method</td><td class="mono">GET | POST | PUT | …</td><td>ikut request</td><td>Method ke URL tujuan</td></tr>
+              <tr><td class="mono">headers</td><td class="mono">{"X-Key":"…"}</td><td>diteruskan</td><td>Header request (JSON objek); <code>content-type</code>/<code>accept</code> ikut otomatis</td></tr>
+              <tr><td class="mono">body</td><td class="mono">teks</td><td>body request</td><td>Body (alternatif kalau tidak kirim body langsung via POST)</td></tr>
+              <tr><td class="mono">format</td><td class="mono">json</td><td>passthrough</td><td>Bungkus hasil jadi JSON <code>{status, contentType, data}</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4 class="docs-h4">Cara pakai — 3 langkah</h4>
+        <ol class="docs-steps">
+          <li>Siapkan URL lengkap API yang mau dipanggil, contoh <code>https://api.contoh.com/data.json</code>.</li>
+          <li>Bungkus jadi <code>/api/cors?url=</code> + URL tadi. <b>Wajib</b> di-<code>encodeURIComponent()</code> kalau dipanggil dari browser (biar <code>&amp;</code>/<code>?</code> di URL tujuan tidak bentrok).</li>
+          <li>Panggil seperti API biasa. Hasilnya sudah membawa header CORS permisif, jadi bisa dibaca dari origin mana pun.</li>
+        </ol>
+
+        <div class="codewrap">
+          <span class="code-label">cURL — GET data dari API lain</span>
+          <button class="copy" data-copy-text="curl &quot;http://localhost:3000/api/cors?url=https://api.contoh.com/data.json&quot;">Salin</button>
+          <pre class="code">curl "http://localhost:3000/api/cors?url=https://api.contoh.com/data.json"</pre>
+        </div>
+
+        <div class="codewrap">
+          <span class="code-label">cURL — POST + header kustom</span>
+          <button class="copy" data-copy-text="curl &quot;http://localhost:3000/api/cors?url=https://api.contoh.com/v1/item&quot; \\&#10;  -X POST -H 'content-type: application/json' \\&#10;  -d '{&quot;nama&quot;:&quot;budi&quot;}'">Salin</button>
+          <pre class="code">curl "http://localhost:3000/api/cors?url=https://api.contoh.com/v1/item" \
+  -X POST -H 'content-type: application/json' \
+  -d '{"nama":"budi"}'</pre>
+        </div>
+
+        <div class="codewrap">
+          <span class="code-label">JavaScript — dari browser, aman dari blokir CORS</span>
+          <button class="copy" data-copy-text="// server yang mengambil URL tujuan, jadi bebas blokir CORS&#10;const apiTujuan = 'https://api.contoh.com/data.json';&#10;const res = await fetch('/api/cors?url=' + encodeURIComponent(apiTujuan));&#10;const data = await res.json();&#10;console.log(data);">Salin</button>
+          <pre class="code">// server yang mengambil URL tujuan, jadi bebas blokir CORS
+const apiTujuan = 'https://api.contoh.com/data.json';
+const res = await fetch('/api/cors?url=' + encodeURIComponent(apiTujuan));
+const data = await res.json();
+console.log(data);</pre>
+        </div>
+
+        <div class="codewrap">
+          <span class="code-label">Python (requests)</span>
+          <button class="copy" data-copy-text="import requests&#10;&#10;r = requests.get('http://localhost:3000/api/cors', params={'url': 'https://api.contoh.com/data.json'})&#10;print(r.json())">Salin</button>
+          <pre class="code">import requests
+
+r = requests.get('http://localhost:3000/api/cors',
+                 params={'url': 'https://api.contoh.com/data.json'})
+print(r.json())</pre>
+        </div>
+
+        <div class="codewrap">
+          <span class="code-label">PHP (cURL)</span>
+          <button class="copy" data-copy-text="$url = 'https://api.contoh.com/data.json';&#10;$ch = curl_init('http://localhost:3000/api/cors?url=' . urlencode($url));&#10;curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);&#10;echo curl_exec($ch);">Salin</button>
+          <pre class="code">$url = 'https://api.contoh.com/data.json';
+$ch = curl_init('http://localhost:3000/api/cors?url=' . urlencode($url));
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+echo curl_exec($ch);</pre>
+        </div>
+
+        <p class="docs-note">
+          💡 Butuh status/content-type tujuan ikut terbaca? Semua header sudah di-<code>expose</code>:
+          <code>X-Upstream-Status</code>, <code>X-Upstream-Url</code>, dan <code>X-Elapsed-Ms</code>.
+          Ingin hasil dibungkus JSON? Tambahkan <code>&amp;format=json</code>.
+        </p>
+      </div>
+
+      <div class="docs-card" id="api-response">
+        <h3 class="docs-h3">Respons Contoh</h3>
+        <pre class="code">{
   "ok": true,
   "meta": {
     "total": 812,
@@ -228,6 +367,7 @@ for p in r.json()['data']:
     }
   ]
 }</pre>
+      </div>
     </section>
 
     <footer class="footer">

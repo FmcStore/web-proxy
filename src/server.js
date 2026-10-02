@@ -5,6 +5,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
+import axios from 'axios';
 import { config, sources, judges } from './config.js';
 import { ProxyService } from './service.js';
 
@@ -17,12 +18,21 @@ const app = express();
 app.disable('x-powered-by');
 app.use(express.json({ limit: '64kb' }));
 
-// --- CORS -------------------------------------------------------------------
+// --- CORS (permisif penuh, support semua origin/method/header) --------------
 if (config.cors) {
   app.use((req, res, next) => {
+    // Semua origin boleh. Tidak ada cookie/credential yang dipakai server ini,
+    // jadi wildcard aman dan paling gampang dipakai dari web/app mana pun.
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,POST,PUT,PATCH,DELETE,OPTIONS');
+    // Echo header yang diminta browser (paling kompatibel), fallback ke wildcard.
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      req.headers['access-control-request-headers'] || '*'
+    );
+    res.setHeader('Access-Control-Expose-Headers', '*');
+    res.setHeader('Access-Control-Max-Age', '86400');
+    res.setHeader('Access-Control-Allow-Private-Network', 'true');
     if (req.method === 'OPTIONS') return res.sendStatus(204);
     next();
   });
@@ -73,6 +83,7 @@ app.get('/api', (req, res) => {
       random: 'GET /api/proxies/random?type=http',
       sources: 'GET /api/sources',
       refresh: 'POST /api/refresh',
+      cors: 'GET|POST /api/cors?url=https://contoh.com/data.json  (bantu fetch lintas-origin)',
     },
   });
 });
@@ -143,10 +154,140 @@ app.post('/api/refresh', rateLimit, async (req, res) => {
   res.json({ ok: true, result });
 });
 
+// --- CORS helper: fetch lintas-origin ---------------------------------------
+// Browser sering diblokir CORS saat menembak API pihak ketiga. Endpoint ini
+// membuat SERVER yang mengambil URL tujuan (bebas dari aturan CORS browser)
+// lalu mengirim hasilnya balik dengan header CORS permisif di atas.
+//   GET  /api/cors?url=https://contoh.com/data.json
+//   POST /api/cors?url=...&method=POST  (body request diteruskan)
+if (config.corsFetch) {
+  app.all(
+    '/api/cors',
+    rateLimit,
+    // Terima semua body sebagai teks (json/spesifik lain biar diteruskan apa adanya).
+    express.text({ type: () => true, limit: '1mb' }),
+    async (req, res) => {
+      const target = String(req.query.url || '');
+      if (!target) {
+        return res.status(400).json({
+          ok: false,
+          error: 'Parameter "url" wajib diisi.',
+          contoh: '/api/cors?url=https://contoh.com/data.json',
+        });
+      }
+
+      let parsed;
+      try {
+        parsed = new URL(target);
+      } catch {
+        return res.status(400).json({ ok: false, error: 'URL tidak valid.' });
+      }
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        return res.status(400).json({ ok: false, error: 'Hanya http:// dan https:// yang didukung.' });
+      }
+      if (!config.corsFetchAllowPrivate && isBlockedHost(parsed.hostname)) {
+        return res.status(403).json({
+          ok: false,
+          error:
+            'Target ke jaringan privat diblokir. Set CORS_FETCH_ALLOW_PRIVATE=true untuk mengizinkan.',
+        });
+      }
+
+      const method = String(
+        req.query.method || (req.method === 'POST' ? 'POST' : 'GET')
+      ).toUpperCase();
+
+      let headers = {};
+      if (req.query.headers) {
+        try {
+          const parsedHeaders = JSON.parse(String(req.query.headers));
+          if (parsedHeaders && typeof parsedHeaders === 'object') headers = parsedHeaders;
+        } catch {
+          return res.status(400).json({ ok: false, error: 'Parameter "headers" harus JSON objek.' });
+        }
+      }
+
+      // Tanpa header eksplisit, teruskan content-type/accept dari request masuk
+      // supaya body POST diteruskan dengan format yang sama (JSON tetap JSON).
+      const hasHeader = (name) =>
+        Object.keys(headers).some((k) => k.toLowerCase() === name);
+      if (!hasHeader('content-type') && req.headers['content-type']) {
+        headers['content-type'] = req.headers['content-type'];
+      }
+      if (!hasHeader('accept') && req.headers.accept) {
+        headers.accept = req.headers.accept;
+      }
+
+      let body;
+      if (method !== 'GET' && method !== 'HEAD') {
+        const raw = req.body;
+        if (typeof raw === 'string' && raw !== '') body = raw;
+        else if (Buffer.isBuffer(raw) && raw.length) body = raw.toString('utf8');
+        else if (raw && typeof raw === 'object' && !Buffer.isBuffer(raw) && Object.keys(raw).length)
+          body = JSON.stringify(raw);
+        // ?body= dipakai kalau tidak ada body request yang diteruskan
+        if ((body === undefined || body === '') && req.query.body !== undefined)
+          body = String(req.query.body);
+      }
+
+      const startedAt = Date.now();
+      try {
+        const upstream = await axios.request({
+          url: parsed.toString(),
+          method,
+          headers,
+          data: body,
+          timeout: config.corsFetchTimeoutMs,
+          maxRedirects: 5,
+          maxContentLength: config.corsFetchMaxBytes,
+          maxBodyLength: config.corsFetchMaxBytes,
+          responseType: 'arraybuffer',
+          validateStatus: () => true,
+          decompress: true,
+        });
+
+        const elapsed = Date.now() - startedAt;
+        const contentType = upstream.headers['content-type'] || 'application/octet-stream';
+        // Header ini bisa dibaca browser karena semuanya di-expose.
+        res.setHeader('X-Upstream-Status', String(upstream.status));
+        res.setHeader('X-Upstream-Url', parsed.toString());
+        res.setHeader('X-Elapsed-Ms', String(elapsed));
+
+        if (String(req.query.format).toLowerCase() === 'json') {
+          return res.json({
+            ok: upstream.status >= 200 && upstream.status < 400,
+            status: upstream.status,
+            elapsedMs: elapsed,
+            contentType,
+            data: Buffer.from(upstream.data).toString('utf8'),
+          });
+        }
+
+        res.status(upstream.status);
+        res.setHeader('Content-Type', contentType);
+        return res.send(Buffer.from(upstream.data));
+      } catch (err) {
+        return res.status(502).json({
+          ok: false,
+          error: `Gagal mengambil ${parsed.hostname}: ${err.code || err.message}`,
+        });
+      }
+    }
+  );
+}
+
 // 404 untuk API
 app.use('/api', (req, res) => res.status(404).json({ ok: false, error: 'Endpoint tidak ditemukan.' }));
 
 // --- util -------------------------------------------------------------------
+// Blokir target ke jaringan privat supaya server tidak jadi celah SSRF.
+// Bisa dimatikan lewat CORS_FETCH_ALLOW_PRIVATE=true.
+const PRIVATE_HOST_RE = /^(localhost|.+\.local|.+\.internal|\[?::1\]?$|0\.0\.0\.0$|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.)/i;
+
+function isBlockedHost(hostname) {
+  return PRIVATE_HOST_RE.test(hostname);
+}
+
 function parseQuery(q) {
   const limit = q.limit === undefined ? 500 : Number(q.limit);
   return {
