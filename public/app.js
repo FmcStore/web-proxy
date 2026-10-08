@@ -270,7 +270,17 @@ els.refreshBtn.addEventListener('click', async () => {
 
 // --- API docs playground ----------------------------------------------------
 const docsBase = (window.location && window.location.origin) || '';
-$('baseUrl').textContent = `${docsBase}/`;
+const quickStartCmd = `curl "${docsBase}/api/proxies?type=http&limit=10"`;
+
+$('baseUrl').textContent = docsBase || '/';
+$('copyBaseUrl').dataset.copyText = docsBase || '/';
+$('quickStartCode').textContent = quickStartCmd;
+$('quickStartCopy').dataset.copyText = quickStartCmd;
+
+// URL DoH yang bisa langsung ditempel di setelan "Secure DNS" browser.
+const dohUrl = `${docsBase}/dns-query`;
+$('dohUrl').textContent = dohUrl || '/dns-query';
+$('copyDohUrl').dataset.copyText = dohUrl || '/dns-query';
 
 const TRY_PRESETS = {
   '/api/proxies': 'type=http&limit=5',
@@ -279,6 +289,7 @@ const TRY_PRESETS = {
   '/api/sources': '',
   '/api/health': '',
   '/api/cors': 'url=https://ipinfo.io/json',
+  '/dns-query': 'name=example.com&type=A',
 };
 
 function currentTryPath() {

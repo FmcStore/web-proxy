@@ -144,20 +144,45 @@
     <section class="panel docs" id="api">
       <div class="docs-head">
         <h2>API Documentation</h2>
+        <div class="base-url-chip">
+          <span class="base-url-label">Base URL</span>
+          <code id="baseUrl">/</code>
+          <button class="copy" id="copyBaseUrl" type="button" data-copy-text="/">Salin URL</button>
+        </div>
         <p>
-          Base URL <code id="baseUrl">/</code> — semua endpoint mengembalikan JSON,
-          kecuali <code>format=text</code>. CORS permisif penuh (semua origin, method, dan header),
-          jadi aman dipanggil dari web/app mana pun. Butuh menembak API lain yang diblokir CORS?
-          Pakai <code>/api/cors</code>. Rate limit 120 request/menit per IP.
+          Semua endpoint mengembalikan JSON, kecuali <code>format=text</code>.
+          CORS permisif penuh (semua origin, method, dan header), jadi aman dipanggil
+          dari web/app mana pun. Butuh menembak API lain yang diblokir CORS? Pakai
+          <code>/api/cors</code>. Rate limit 120 request/menit per IP.
         </p>
         <div class="docs-toc">
+          <a href="#api-quickstart">⚡ Mulai Cepat</a>
           <a href="#api-try">🚀 Coba Langsung</a>
           <a href="#api-endpoints">Endpoint</a>
           <a href="#api-params">Parameter</a>
           <a href="#api-examples">Contoh</a>
           <a href="#api-cors">Bantu CORS</a>
+          <a href="#api-dns">🛡️ DNS Browser</a>
           <a href="#api-response">Respons</a>
         </div>
+      </div>
+
+      <div class="docs-card quickstart" id="api-quickstart">
+        <h3 class="docs-h3">⚡ Mulai Cepat</h3>
+        <p class="docs-note">
+          Salin base URL di atas, tempel ke kode kamu, lalu panggil endpoint mana pun.
+          Contoh: ambil 10 proxy HTTP aktif dalam satu perintah.
+        </p>
+        <div class="codewrap">
+          <span class="code-label">cURL — 10 proxy HTTP</span>
+          <button class="copy" id="quickStartCopy" type="button" data-copy-text="curl &quot;http://localhost:3000/api/proxies?type=http&amp;limit=10&quot;">Salin</button>
+          <pre class="code" id="quickStartCode">curl "http://localhost:3000/api/proxies?type=http&amp;limit=10"</pre>
+        </div>
+        <p class="docs-note">
+          Ganti query sesuai kebutuhan: <code>?type=socks5&amp;format=text</code> untuk daftar
+          <code>ip:port</code> siap pakai, atau <code>?type=https&amp;limit=20</code>. Lihat
+          <a href="#api-params">parameter</a> dan <a href="#api-examples">contoh</a> lengkap di bawah.
+        </p>
       </div>
 
       <div class="docs-card tryit" id="api-try">
@@ -170,6 +195,7 @@
             <option value="/api/sources">GET /api/sources</option>
             <option value="/api/health">GET /api/health</option>
             <option value="/api/cors">GET /api/cors</option>
+            <option value="/dns-query">GET /dns-query (DoH)</option>
           </select>
           <input id="tryParams" type="text" value="type=http&amp;limit=5" placeholder="type=http&amp;limit=5" />
           <button class="btn primary" id="tryBtn">Kirim</button>
@@ -199,6 +225,8 @@
               <tr><td><span class="method get">GET</span></td><td class="mono">/api</td><td>Ringkasan semua endpoint</td></tr>
               <tr><td><span class="method post">POST</span></td><td class="mono">/api/refresh</td><td>Paksa cek ulang sekarang (<code>409</code> kalau sedang berjalan)</td></tr>
               <tr><td><span class="method get">GET</span><span class="method post">POST</span></td><td class="mono">/api/cors</td><td>Bantu fetch lintas-origin — server mengambil URL tujuan, bebas dari blokir CORS browser</td></tr>
+              <tr><td><span class="method get">GET</span><span class="method post">POST</span></td><td class="mono">/dns-query</td><td>DNS-over-HTTPS (DoH) — dipakai browser sebagai <b>DNS</b>, jawaban JSON atau wireformat RFC 8484</td></tr>
+              <tr><td><span class="method get">GET</span></td><td class="mono">/api/dns</td><td>Info URL DoH + status DNS server</td></tr>
             </tbody>
           </table>
         </div>
@@ -339,6 +367,110 @@ echo curl_exec($ch);</pre>
           💡 Butuh status/content-type tujuan ikut terbaca? Semua header sudah di-<code>expose</code>:
           <code>X-Upstream-Status</code>, <code>X-Upstream-Url</code>, dan <code>X-Elapsed-Ms</code>.
           Ingin hasil dibungkus JSON? Tambahkan <code>&amp;format=json</code>.
+        </p>
+      </div>
+
+      <div class="docs-card dns-card" id="api-dns">
+        <h3 class="docs-h3">🛡️ Jadikan Browser Pakai DNS Kita <code>/dns-query</code></h3>
+        <p class="docs-note">
+          Server ini juga bisa dipakai sebagai <b>DNS buat browser</b> lewat <b>DNS-over-HTTPS (DoH)</b>.
+          Query DNS dikirim terenkripsi di dalam HTTPS, jadi tidak bisa dibajak atau diblokir oleh
+          DNS operator/ISP — website yang tumbang gara-gara “DNS nakal / Internet Positif” bisa
+          diakses lagi. Tambahkan proxy dari daftar di atas supaya IP-mu juga ikut berganti.
+        </p>
+        <div class="base-url-chip">
+          <span class="base-url-label">DoH URL</span>
+          <code id="dohUrl">/dns-query</code>
+          <button class="copy" id="copyDohUrl" type="button" data-copy-text="/dns-query">Salin URL</button>
+        </div>
+        <p class="docs-note">
+          ⚠️ Browser hanya menerima DoH yang <b>HTTPS</b>. Untuk dipakai perangkat lain, deploy dulu ke
+          hosting ber-HTTPS (Railway/VPS + domain), lalu pakai <code>https://domain-kamu/dns-query</code>.
+          Saat dites di komputer sendiri, <code>http://localhost:3000/dns-query</code> juga jalan.
+        </p>
+
+        <h4 class="docs-h4">Cara setel di browser &amp; perangkat</h4>
+        <div class="tablewrap docs-tablewrap">
+          <table class="docs-table">
+            <thead>
+              <tr><th>Browser / OS</th><th>Menu</th><th>Isi dengan</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Chrome, Edge, Brave, Opera</td>
+                <td class="mono">Settings → Privacy and security → Security → Use secure DNS → Custom</td>
+                <td class="mono">URL DoH di atas</td>
+              </tr>
+              <tr>
+                <td>Firefox</td>
+                <td class="mono">Settings → Privacy &amp; Security → DNS over HTTPS → Max Protection → Custom</td>
+                <td class="mono">URL DoH di atas</td>
+              </tr>
+              <tr>
+                <td>Android 9+</td>
+                <td class="mono">Setelan → Jaringan → DNS Pribadi (Private DNS) → Nama host penyedia</td>
+                <td class="mono">domain-kamu.com <b>tanpa</b> https:// dan tanpa /dns-query</td>
+              </tr>
+              <tr>
+                <td>Windows 11</td>
+                <td class="mono">Settings → Network → Wi-Fi/Ethernet → DNS server assignment → Manual → DoH on</td>
+                <td class="mono">URL DoH di atas</td>
+              </tr>
+              <tr>
+                <td>Desktop app / lain-lain</td>
+                <td class="mono">Set “DoH / DNS over HTTPS” ke URL di bawah</td>
+                <td class="mono">URL DoH di atas</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4 class="docs-h4">Tipe record yang didukung</h4>
+        <p class="docs-note">
+          <code>A</code>, <code>AAAA</code>, <code>CNAME</code>, <code>MX</code>, <code>TXT</code>,
+          <code>NS</code>, <code>SOA</code>, <code>SRV</code>, <code>PTR</code>, <code>CAA</code>,
+          dan <code>ANY</code>. Tipe lain dijawab <code>NOTIMP</code> (belum didukung).
+        </p>
+
+        <h4 class="docs-h4">Tes cepat</h4>
+        <div class="codewrap">
+          <span class="code-label">cURL — tanya DNS dalam JSON</span>
+          <button class="copy" data-copy-text="curl &quot;http://localhost:3000/dns-query?name=example.com&amp;type=A&quot;">Salin</button>
+          <pre class="code">curl "http://localhost:3000/dns-query?name=example.com&amp;type=A"
+
+# hasil:
+{
+  "Status": 0,
+  "Question": [{ "name": "example.com.", "type": 1 }],
+  "Answer": [{ "name": "example.com.", "type": 1, "TTL": 300, "data": "93.184.216.34" }]
+}</pre>
+        </div>
+
+        <div class="codewrap">
+          <span class="code-label">JavaScript — resolve domain dari browser</span>
+          <button class="copy" data-copy-text="// CORS sudah permisif, jadi bisa dipanggil langsung dari halaman web&#10;const res = await fetch('/dns-query?name=example.com&amp;type=A');&#10;const { Status, Answer } = await res.json();&#10;console.log(Status, Answer.map((a) =&gt; a.data));">Salin</button>
+          <pre class="code">// CORS sudah permisif, jadi bisa dipanggil langsung dari halaman web
+const res = await fetch('/dns-query?name=example.com&amp;type=A');
+const { Status, Answer } = await res.json();
+console.log(Status, Answer.map((a) =&gt; a.data));</pre>
+        </div>
+
+        <div class="codewrap">
+          <span class="code-label">Mode DNS server (opsional) — setelan perangkat/router</span>
+          <button class="copy" data-copy-text="# jalankan server dengan DNS_SERVER=true (butuh port 53)&#10;DNS_SERVER=true DNS_PORT=53 npm start&#10;&#10;# lalu arahkan DNS perangkat/router ke IP server ini, dan tes:&#10;dig @192.168.1.10 example.com A&#10;nslookup example.com 192.168.1.10">Salin</button>
+          <pre class="code"># jalankan server dengan DNS_SERVER=true (butuh port 53)
+DNS_SERVER=true DNS_PORT=53 npm start
+
+# lalu arahkan DNS perangkat/router ke IP server ini, dan tes:
+dig @192.168.1.10 example.com A
+nslookup example.com 192.168.1.10</pre>
+        </div>
+
+        <p class="docs-note">
+          💡 Endpoint ini juga melayani wireformat RFC 8484 (<code>GET /dns-query?dns=&lt;base64url&gt;</code>
+          dan <code>POST /dns-query</code> dengan <code>Content-Type: application/dns-message</code>) — itu
+          yang dipakai browser saat kamu memasang URL DoH di atas. Upstream resolver bisa diganti lewat
+          <code>DNS_UPSTREAM=1.1.1.1,8.8.8.8</code>.
         </p>
       </div>
 

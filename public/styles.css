@@ -303,6 +303,28 @@ tbody td:first-child { color: var(--muted-2); width: 46px; }
 .docs { padding: 26px 24px 30px; }
 .docs-head h2 { margin: 0 0 8px; font-size: 24px; letter-spacing: -0.6px; }
 .docs-head > p { color: var(--muted); margin: 0 0 18px; font-size: 13.5px; line-height: 1.65; max-width: 860px; }
+.base-url-chip {
+  display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  max-width: 100%; padding: 7px 9px 7px 13px; margin: 0 0 16px;
+  border: 1px solid var(--border); border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.base-url-chip .base-url-label {
+  font-size: 10.5px; font-weight: 800; letter-spacing: .7px;
+  text-transform: uppercase; color: var(--muted-2);
+}
+.base-url-chip #baseUrl, .base-url-chip #dohUrl { overflow-wrap: anywhere; }
+.base-url-chip .copy { flex: none; }
+.base-url-chip .copy:hover { background: rgba(255, 255, 255, 0.1); }
+.quickstart { background: rgba(109, 124, 255, 0.05); }
+.quickstart .docs-note a { color: #b7c4ff; }
+/* kartu DNS-over-HTTPS: aksen teal biar beda dari kartu lain */
+.dns-card { background: rgba(45, 212, 191, 0.045); }
+.dns-card .docs-h3 code { font-size: 12.5px; }
+.dns-card .base-url-chip { border-color: rgba(45, 212, 191, 0.35); background: rgba(45, 212, 191, 0.07); }
+.dns-card .base-url-chip #dohUrl { color: #8ff0dd; background: none; border: 0; padding: 0; }
+.dns-card .base-url-chip .copy:hover { background: rgba(45, 212, 191, 0.16); }
+.dns-card .docs-note a { color: #6ee7cf; }
 .docs-toc { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
 .docs-toc a {
   font-size: 12.5px; font-weight: 600; color: var(--muted); text-decoration: none;
@@ -430,6 +452,7 @@ pre.code {
   .toolbar, .resultbar { padding-left: 13px; padding-right: 13px; }
   .docs { padding: 18px 15px 22px; }
   .docs-card { padding: 15px 14px; }
+  .base-url-chip { border-radius: var(--radius-sm); }
   .docs-toc { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 6px; }
   .docs-toc a { flex: 0 0 auto; }
   .controls { width: 100%; }
