@@ -16,6 +16,7 @@ Proxy diambil otomatis dari beberapa sumber publik, **dicek satu per satu**, dan
 - **Web UI**: filter tipe, filter anonimitas, pencarian, sorting, copy, dan unduh `.txt`.
 - **Kolom “Umur Cek”**: menampilkan berapa lama sejak tiap proxy terakhir diverifikasi, diperbarui tiap detik.
 - **REST API**: JSON / plain text / random proxy.
+- **DNS buat browser (DoH)**: server ini bisa dipakai sebagai **DNS-over-HTTPS** di Chrome/Edge/Firefox/Android — buka blokir DNS operator tanpa aplikasi tambahan.
 - **Docker ready**: ada `Dockerfile` + `docker-compose.yml`.
 - **Persisten**: hasil pengecekan disimpan di `data/proxies.json`, jadi server restart tidak kosong.
 
@@ -130,6 +131,11 @@ Tidak perlu set `PORT` — Railway menyuntikkannya otomatis dan server sudah mem
 
 Data pengecekan (`data/proxies.json`) hidup di filesystem container, jadi hilang saat re-deploy. Kalau mau persisten, mount volume di Railway (Settings → Volumes, mount ke `/app/data`).
 
+Setelah punya domain HTTPS dari Railway, DNS buat browser otomatis tersedia di
+`https://domain-kamu.up.railway.app/dns-query` — tempel URL itu di setelan “Secure DNS”
+browser. `DNS_SERVER=true` (port 53 UDP/TCP) **tidak** bisa dipakai di Railway; untuk itu
+pakai VPS/PC sendiri.
+
 ---
 
 ## 🔌 API
@@ -147,6 +153,8 @@ Data pengecekan (`data/proxies.json`) hidup di filesystem container, jadi hilang
 | `GET /api/health` | Health check |
 | `POST /api/refresh` | Paksa cek ulang sekarang |
 | `GET|POST /api/cors?url=…` | Bantu fetch lintas-origin (CORS) |
+| `GET|POST /dns-query` | **DNS-over-HTTPS** — siap dipasang di setelan “Secure DNS” browser |
+| `GET /api/dns` | Info URL DoH + status DNS server |
 
 ### Bantu request lintas-origin: `/api/cors`
 
@@ -272,6 +280,80 @@ Contoh respons JSON:
 
 ---
 
+## 🛡️ DNS buat Browser (DNS-over-HTTPS)
+
+Selain daftar proxy, server ini juga bisa jadi **DNS untuk browser** lewat **DNS-over-HTTPS
+(DoH)**. Semua query DNS dikirim terenkripsi di dalam HTTPS, jadi tidak bisa dibajak atau
+diblokir oleh DNS operator/ISP — website yang tumbang karena “DNS nakal”/Internet Positif
+bisa diakses kembali. Tambahkan proxy dari daftar di atas supaya IP-mu ikut berganti.
+
+**URL DoH:**
+
+```
+http://localhost:3000/dns-query            # tes lokal
+https://domain-kamu.com/dns-query          # untuk dipakai perangkat lain (wajib HTTPS)
+```
+
+URL ini bisa langsung dilihat di web UI (kartu “🛡️ Jadikan Browser Pakai DNS Kita”) atau
+lewat `GET /api/dns`.
+
+### Cara setel
+
+| Browser / OS | Menu | Isi dengan |
+| --- | --- | --- |
+| Chrome, Edge, Brave, Opera | Settings → Privacy and security → Security → **Use secure DNS** → Custom | `https://domain-kamu.com/dns-query` |
+| Firefox | Settings → Privacy & Security → **DNS over HTTPS** → Max Protection → Custom | `https://domain-kamu.com/dns-query` |
+| Android 9+ | Setelan → Jaringan → **DNS Pribadi** → Nama host penyedia | `domain-kamu.com` (tanpa `https://` dan tanpa `/dns-query`) |
+| Windows 11 | Settings → Network → **DNS server assignment** → Manual → DoH on | `https://domain-kamu.com/dns-query` |
+
+### Tipe record
+
+`A`, `AAAA`, `CNAME`, `MX`, `TXT`, `NS`, `SOA`, `SRV`, `PTR`, `CAA`, dan `ANY`.
+Tipe lain dijawab `NOTIMP`.
+
+### Format endpoint
+
+| Format | Contoh | Dipakai oleh |
+| --- | --- | --- |
+| JSON | `GET /dns-query?name=example.com&type=A` | curl, Postman, aplikasi |
+| Wireformat (RFC 8484) | `GET /dns-query?dns=<base64url>` | browser |
+| Wireformat (RFC 8484) | `POST /dns-query` + `Content-Type: application/dns-message` | browser |
+
+Contoh:
+
+```bash
+# jawaban JSON (mirip DoH Google/Cloudflare)
+curl "http://localhost:3000/dns-query?name=example.com&type=A"
+
+# {"Status":0,"Question":[{"name":"example.com.","type":1}],
+#  "Answer":[{"name":"example.com.","type":1,"TTL":300,"data":"93.184.216.34"}]}
+```
+
+```js
+// dari browser (CORS permisif)
+const res = await fetch('/dns-query?name=example.com&type=A');
+const { Status, Answer } = await res.json();
+console.log(Status, Answer.map((a) => a.data));
+```
+
+### Opsional: sekaligus jadi DNS server (UDP + TCP port 53)
+
+Kalau ingin mengarahkan DNS perangkat/router ke IP server ini (bukan per-browser):
+
+```bash
+DNS_SERVER=true DNS_PORT=53 npm start
+dig @192.168.1.10 example.com A
+```
+
+Mode ini **mati secara default** karena butuh port istimewa (53) dan mayoritas hosting
+(termasuk Railway) tidak membuka UDP. Untuk setelan perangkat, jalankan di VPS/PC sendiri
+dan buka port 53 UDP+TCP.
+
+> Resolver upstream bisa diganti, misalnya `DNS_UPSTREAM=1.1.1.1,8.8.8.8` (default: DNS
+> bawaan container/host).
+
+---
+
 ## ⚙️ Konfigurasi (env)
 
 | Variabel | Default | Keterangan |
@@ -291,6 +373,15 @@ Contoh respons JSON:
 | `CORS_FETCH_TIMEOUT_MS` | `15000` | Timeout request di `/api/cors` |
 | `CORS_FETCH_MAX_BYTES` | `5242880` | Batas ukuran respons `(5 MB)` |
 | `CORS_FETCH_ALLOW_PRIVATE` | `false` | Izinkan `/api/cors` menembak alamat jaringan privat |
+| `DNS` | `true` | Aktifkan DNS-over-HTTPS di `/dns-query` |
+| `DNS_SERVER` | `false` | Sekaligus jadi DNS server UDP+TCP (butuh port 53) |
+| `DNS_PORT` | `53` | Port DNS server |
+| `DNS_HOST` | `0.0.0.0` | Alamat bind DNS server |
+| `DNS_UPSTREAM` | – | Resolver upstream, mis. `1.1.1.1,8.8.8.8` (default: DNS host) |
+| `DNS_TIMEOUT_MS` | `5000` | Timeout query ke upstream |
+| `DNS_TTL` | `60` | TTL jawaban untuk record tanpa TTL (detik) |
+| `DNS_MAX_UDP_SIZE` | `1232` | Batas jawaban UDP sebelum ditandai `TC` |
+| `DNS_RATE_LIMIT_MAX` | `600` | Batas query DoH per menit per IP |
 
 ---
 
@@ -341,6 +432,7 @@ Kalau baris sudah berisi skema (`socks5://ip:port`, `http://ip:port`), bagian `p
 │   ├── store.js        # penyimpanan di memori + persist JSON
 │   ├── service.js      # orkestrasi siklus refresh + scheduler
 │   ├── server.js       # Express server + REST API
+│   ├── dns.js          # DNS buat browser (DoH) + DNS server UDP/TCP opsional
 │   └── cli-refresh.js  # jalankan 1 siklus lalu keluar
 ├── public/             # web UI (HTML/CSS/JS, tanpa build step)
 ├── data/               # hasil pengecekan (dibuat otomatis)

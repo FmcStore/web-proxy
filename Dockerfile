@@ -8,7 +8,8 @@ RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --omit
 FROM node:22-alpine
 ENV NODE_ENV=production \
     PORT=3000 \
-    REFRESH_INTERVAL_MS=600000
+    REFRESH_INTERVAL_MS=600000 \
+    DNS=true
 
 WORKDIR /app
 

@@ -6,11 +6,19 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
+      # DNS server biasa (opsional). Nyalakan dengan DNS_SERVER=true, lalu
+      # arahkan DNS perangkat/router ke IP host ini.
+      # - "53:53/udp"
+      # - "53:53/tcp"
     environment:
       PORT: 3000
       # 10 menit
       REFRESH_INTERVAL_MS: 600000
       REFRESH_ON_START: "true"
+      # DNS buat browser (DNS-over-HTTPS) di /dns-query
+      DNS: "true"
+      # Set true kalau mau sekaligus jadi DNS server UDP+TCP port 53
+      DNS_SERVER: "false"
     volumes:
       # simpan hasil pengecekan supaya tidak hilang saat container restart
       - ./data:/app/data

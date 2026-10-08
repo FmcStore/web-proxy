@@ -8,6 +8,7 @@ import express from 'express';
 import axios from 'axios';
 import { config, sources, judges } from './config.js';
 import { ProxyService } from './service.js';
+import { handleDoh, startDnsServer } from './dns.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '..');
@@ -40,30 +41,42 @@ if (config.cors) {
 
 // --- Rate limiter sederhana (per IP) ---------------------------------------
 const RATE_LIMIT = { windowMs: 60_000, max: 120 };
-const hits = new Map();
+const limiterBuckets = [];
 
-function rateLimit(req, res, next) {
-  const ip = req.ip || req.socket.remoteAddress || 'unknown';
-  const now = Date.now();
-  const entry = hits.get(ip);
+function createRateLimiter({ windowMs, max }) {
+  const hits = new Map();
+  limiterBuckets.push({ hits, windowMs });
 
-  if (!entry || now - entry.start > RATE_LIMIT.windowMs) {
-    hits.set(ip, { start: now, count: 1 });
+  return function limiter(req, res, next) {
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
+    const now = Date.now();
+    const entry = hits.get(ip);
+
+    if (!entry || now - entry.start > windowMs) {
+      hits.set(ip, { start: now, count: 1 });
+      return next();
+    }
+
+    entry.count++;
+    if (entry.count > max) {
+      res.setHeader('Retry-After', Math.ceil((entry.start + windowMs - now) / 1000));
+      return res.status(429).json({ ok: false, error: 'Terlalu banyak permintaan, coba lagi sebentar.' });
+    }
     return next();
-  }
-
-  entry.count++;
-  if (entry.count > RATE_LIMIT.max) {
-    res.setHeader('Retry-After', Math.ceil((entry.start + RATE_LIMIT.windowMs - now) / 1000));
-    return res.status(429).json({ ok: false, error: 'Terlalu banyak permintaan, coba lagi sebentar.' });
-  }
-  return next();
+  };
 }
+
+const rateLimit = createRateLimiter(RATE_LIMIT);
+// Browser menembak banyak lookup saat membuka satu halaman, jadi DoH dapat
+// jatah lebih besar daripada endpoint API biasa.
+const dnsRateLimit = createRateLimiter({ windowMs: 60_000, max: config.dnsRateLimitMax });
 
 setInterval(() => {
   const now = Date.now();
-  for (const [ip, entry] of hits) {
-    if (now - entry.start > RATE_LIMIT.windowMs) hits.delete(ip);
+  for (const bucket of limiterBuckets) {
+    for (const [ip, entry] of bucket.hits) {
+      if (now - entry.start > bucket.windowMs) bucket.hits.delete(ip);
+    }
   }
 }, RATE_LIMIT.windowMs).unref?.();
 
@@ -84,6 +97,7 @@ app.get('/api', (req, res) => {
       sources: 'GET /api/sources',
       refresh: 'POST /api/refresh',
       cors: 'GET|POST /api/cors?url=https://contoh.com/data.json  (bantu fetch lintas-origin)',
+      dns: 'GET|POST /dns-query  (DNS-over-HTTPS, siap didaftarkan di browser)',
     },
   });
 });
@@ -109,6 +123,32 @@ app.get('/api/sources', (req, res) => {
     judges,
     data: sources.map((s) => ({ name: s.name, url: s.url, protocol: s.protocol })),
     report: service.store.meta.sourceReport,
+  });
+});
+
+// --- Info DNS buat browser ---------------------------------------------------
+app.get('/api/dns', (req, res) => {
+  const proto = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+  const host = req.headers['x-forwarded-host'] || req.headers.host || `localhost:${config.port}`;
+  res.json({
+    ok: true,
+    enabled: config.dns,
+    doh: {
+      // Tempel URL ini di setelan "Secure DNS / DNS over HTTPS" browser.
+      url: `${proto}://${host}/dns-query`,
+      json: 'GET /dns-query?name=example.com&type=A  (application/dns-json)',
+      wire: 'POST /dns-query  (application/dns-message, RFC 8484)',
+    },
+    server: {
+      enabled: config.dnsServer,
+      host: config.dnsHost,
+      port: config.dnsPort,
+      note: config.dnsServer
+        ? 'Arahkan DNS perangkat/router ke IP server ini.'
+        : 'Matikan default. Set DNS_SERVER=true (butuh port 53) untuk menyalakan.',
+    },
+    upstream: config.dnsUpstream.length ? config.dnsUpstream : 'default host resolver',
+    ttl: config.dnsTtl,
   });
 });
 
@@ -276,6 +316,17 @@ if (config.corsFetch) {
   );
 }
 
+// --- DNS buat browser: DNS-over-HTTPS (RFC 8484) ----------------------------
+// Daftarkan URL ini sebagai "Secure DNS / DNS over HTTPS" di browser:
+//   http(s)://host-kamu/dns-query
+// GET  ?name=example.com&type=A  -> JSON (mudah dites pakai curl/Postman)
+// GET  ?dns=<base64url>          -> wireformat (dipakai browser)
+// POST (application/dns-message) -> wireformat (dipakai browser)
+if (config.dns) {
+  app.get('/dns-query', dnsRateLimit, handleDoh);
+  app.post('/dns-query', dnsRateLimit, express.raw({ type: () => true, limit: '8kb' }), handleDoh);
+}
+
 // 404 untuk API
 app.use('/api', (req, res) => res.status(404).json({ ok: false, error: 'Endpoint tidak ditemukan.' }));
 
@@ -319,13 +370,20 @@ function formatRecord(p, q = {}) {
 
 // --- start ------------------------------------------------------------------
 service.start();
+// DNS server biasa (UDP + TCP). Nonaktif kecuali DNS_SERVER=true.
+const dnsServer = startDnsServer();
+
 const server = app.listen(config.port, () => {
   console.log(`Fmc Proxy berjalan di http://localhost:${config.port}`);
   console.log(`Auto refresh tiap ${Math.round(config.refreshIntervalMs / 60000)} menit.`);
+  if (config.dns) {
+    console.log(`DNS buat browser (DoH): http://localhost:${config.port}/dns-query`);
+  }
 });
 
 const shutdown = () => {
   service.stop();
+  dnsServer?.close();
   server.close(() => process.exit(0));
 };
 process.on('SIGINT', shutdown);

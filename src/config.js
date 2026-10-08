@@ -57,6 +57,29 @@ export const config = {
   // Izinkan endpoint bantu menembak alamat jaringan privat (localhost, LAN, dst).
   // Default false supaya server tidak jadi celah SSRF ke jaringan internal.
   corsFetchAllowPrivate: bool(process.env.CORS_FETCH_ALLOW_PRIVATE, false),
+
+  // --- DNS buat browser -----------------------------------------------------
+  // DNS-over-HTTPS (DoH) di GET|POST /dns-query. Bisa didaftarkan langsung
+  // sebagai "Secure DNS" di Chrome/Firefox/Edge dan Wi-Fi Android.
+  dns: bool(process.env.DNS, true),
+  // Server DNS biasa (UDP + TCP di DNS_PORT). Perlu port istimewa 53, jadi
+  // default mati. Nyalakan kalau mau set DNS perangkat/router ke IP server.
+  dnsServer: bool(process.env.DNS_SERVER, false),
+  dnsPort: num(process.env.DNS_PORT, 53),
+  dnsHost: process.env.DNS_HOST || '0.0.0.0',
+  // Upstream resolver (kosong = pakai DNS bawaan container/host).
+  // Contoh: DNS_UPSTREAM=1.1.1.1,8.8.8.8
+  dnsUpstream: (process.env.DNS_UPSTREAM || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean),
+  dnsTimeoutMs: num(process.env.DNS_TIMEOUT_MS, 5000),
+  // TTL default untuk record yang tidak menyertakan TTL (detik)
+  dnsTtl: num(process.env.DNS_TTL, 60),
+  // Batas ukuran jawaban UDP sebelum ditandai TC (client ulang via TCP)
+  dnsMaxUdpSize: num(process.env.DNS_MAX_UDP_SIZE, 1232),
+  // Rate limit khusus DoH (browser melakukan banyak lookup saat buka halaman)
+  dnsRateLimitMax: num(process.env.DNS_RATE_LIMIT_MAX, 600),
 };
 
 /**
